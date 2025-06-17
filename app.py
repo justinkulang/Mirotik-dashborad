@@ -149,9 +149,10 @@ class RouterOSService:
         try:
             api = get_mikrotik_api()
             users = list(api.path('ip', 'hotspot', 'user').select(
-                '.id', 'name', 'profile', 'disabled', 'limit-uptime', 'limit-bytes-total', # Added .id
+                '.id', 'name', 'password', 'profile', 'disabled', 'limit-uptime', 'limit-bytes-total',
                 'bytes-in', 'bytes-out', 'comment', 'limit-bytes-in', 'limit-bytes-out'
             ))
+            # Password field might be empty or not present if not readable
             return users
         except ConnectionError as e:
             logger.error(f"Error getting users (connection issue): {e}")
@@ -486,10 +487,40 @@ def test_connection():
 
 @app.route('/api/users', methods=['GET'])
 def get_users():
-    """Get all hotspot users."""
-    users = router_os_service.get_hotspot_users()
+    """Get all hotspot users, with optional filtering."""
+    search_term = request.args.get('search_term', '').lower()
+    filter_profile = request.args.get('filter_profile', '')
+    filter_status = request.args.get('filter_status', '') # "active", "disabled", or ""
+
+    all_users_data = router_os_service.get_hotspot_users()
+
+    filtered_users = []
+    for user_data in all_users_data:
+        # Search term filter (username and comment)
+        if search_term:
+            name_match = search_term in user_data.get('name', '').lower()
+            comment_match = search_term in user_data.get('comment', '').lower()
+            if not (name_match or comment_match):
+                continue # Skip user if search term doesn't match
+
+        # Profile filter
+        if filter_profile:
+            if user_data.get('profile') != filter_profile:
+                continue # Skip user if profile doesn't match
+
+        # Status filter
+        if filter_status:
+            user_is_disabled = user_data.get('disabled', 'false') == 'true'
+            if filter_status == 'active' and user_is_disabled:
+                continue # Skip if filtering for active and user is disabled
+            if filter_status == 'disabled' and not user_is_disabled:
+                continue # Skip if filtering for disabled and user is active
+
+        filtered_users.append(user_data)
+
+    # Format the filtered list for the response
     formatted_users = []
-    for user in users:
+    for user in filtered_users: # Iterate over the already filtered list
         formatted_users.append({
             'username': user.get('name', ''),
             'profile': user.get('profile', 'default'),
@@ -590,6 +621,7 @@ def bulk_create_users():
     failed_users_count = 0
     errors = []
     created_usernames = set() # To ensure uniqueness within this batch
+    generated_credentials_list = [] # To store username/password pairs
 
     try:
         api = get_mikrotik_api()
@@ -625,6 +657,7 @@ def bulk_create_users():
                 logger.info(f"Attempting to bulk create user: {username} with profile: {profile}")
                 user_path.add(**user_data)
                 successfully_created_count += 1
+                generated_credentials_list.append({'username': username, 'password': password})
             except TrapError as e:
                 logger.error(f"TrapError creating user {username} during bulk operation: {str(e)}")
                 failed_users_count += 1
@@ -641,7 +674,8 @@ def bulk_create_users():
             'requested_users': number_of_users,
             'successful_users': successfully_created_count,
             'failed_users': failed_users_count,
-            'errors': errors
+            'errors': errors,
+            'generated_credentials': generated_credentials_list
         })
 
     except ConnectionError as e:
@@ -814,7 +848,150 @@ def bulk_delete_users_route():
     success, message, count = router_os_service.delete_users_bulk(scope.lower(), group_name)
     return jsonify({'success': success, 'message': message, 'deleted_count': count})
 
+# For CSV and PDF export
+import io
+import csv
+from flask import Response
+
+# Attempt to import WeasyPrint for PDF export
+try:
+    from weasyprint import HTML as WeasyHTML
+    WEASYPRINT_AVAILABLE = True
+    logger.info("WeasyPrint imported successfully.")
+except ImportError:
+    WEASYPRINT_AVAILABLE = False
+    logger.warning("WeasyPrint not found. PDF export will be disabled.")
+    logger.warning("To enable PDF export, please install WeasyPrint: pip install WeasyPrint")
+    logger.warning("You may also need to install its system dependencies (like Pango, Cairo, GDK-PixBuf).")
+    logger.warning("See https://doc.weasyprint.org/stable/first_steps.html#installation")
+
+
+def format_bytes_for_export(bytes_val):
+    """Helper to format byte values for export, returns 'Unlimited' or formatted string."""
+    if not bytes_val or bytes_val == '0' or bytes_val == '':
+        return "Unlimited"
+    try:
+        numeric_bytes = float(bytes_val)
+        if numeric_bytes == 0: return "Unlimited" # Treat 0 as unlimited for limits
+        k = 1024
+        sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+        if numeric_bytes < 1: return f"{numeric_bytes:.0f} B" # Show small values as B
+        i = min(len(sizes) - 1, int(math.floor(math.log(numeric_bytes) / math.log(k))))
+        return f"{numeric_bytes / math.pow(k, i):.2f} {sizes[i]}"
+    except ValueError:
+        return str(bytes_val) # Return original if not convertible to number
+
+@app.route('/api/export-users', methods=['GET'])
+def export_users_route():
+    export_format = request.args.get('format', 'json').lower()
+    users = router_os_service.get_hotspot_users() # This now includes password if readable
+
+    if export_format == 'json':
+        return jsonify(users)
+
+    elif export_format == 'csv':
+        si = io.StringIO()
+        cw = csv.writer(si)
+        headers = [
+            'Username', 'Password', 'Profile', 'Time Limit',
+            'Total Data Limit', 'Upload Limit', 'Download Limit',
+            'Actual Download', 'Actual Upload', 'Comment', 'Disabled'
+        ]
+        cw.writerow(headers)
+        for user in users:
+            row = [
+                user.get('name', ''),
+                user.get('password', ''), # Will be empty if not readable
+                user.get('profile', ''),
+                user.get('limit-uptime', 'Unlimited'),
+                format_bytes_for_export(user.get('limit-bytes-total')),
+                format_bytes_for_export(user.get('limit-bytes-in')),
+                format_bytes_for_export(user.get('limit-bytes-out')),
+                format_bytes_for_export(user.get('bytes-in')), # Actual usage
+                format_bytes_for_export(user.get('bytes-out')),# Actual usage
+                user.get('comment', ''),
+                user.get('disabled', 'false')
+            ]
+            cw.writerow(row)
+        output = si.getvalue()
+        return Response(
+            output,
+            mimetype="text/csv",
+            headers={"Content-disposition": "attachment; filename=hotspot_users.csv"}
+        )
+
+    elif export_format == 'html_voucher' or export_format == 'pdf_voucher':
+        html_content = """
+        <html>
+            <head>
+                <title>Hotspot Vouchers</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+                    .voucher-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }}
+                    .voucher {{
+                        border: 2px solid #667eea;
+                        border-radius: 10px;
+                        padding: 15px;
+                        margin-bottom: 10px; /* For PDF printing */
+                        page-break-inside: avoid;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                        background-color: #f9f9f9;
+                    }}
+                    .voucher h3 {{ color: #764ba2; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;}}
+                    .voucher p {{ margin: 5px 0; font-size: 14px; }}
+                    .voucher p strong {{ color: #333; }}
+                </style>
+            </head>
+            <body>
+                <div class="voucher-grid">
+        """
+        for user in users:
+            html_content += f"""
+            <div class="voucher">
+                <h3>Hotspot Voucher</h3>
+                <p><strong>Username:</strong> {user.get('name', 'N/A')}</p>
+                <p><strong>Password:</strong> {user.get('password') or 'N/A'}</p>
+                <p><strong>Profile:</strong> {user.get('profile', 'N/A')}</p>
+                <p><strong>Time Limit:</strong> {user.get('limit-uptime') or 'Unlimited'}</p>
+                <p><strong>Data Limit:</strong> {format_bytes_for_export(user.get('limit-bytes-total'))}</p>
+            </div>
+            """
+        html_content += "</div></body></html>"
+
+        if export_format == 'pdf_voucher':
+            if not WEASYPRINT_AVAILABLE:
+                return jsonify({
+                    "success": False,
+                    "message": "PDF generation is not available due to missing WeasyPrint library or its dependencies. Please check server logs."
+                }), 500
+            try:
+                pdf_file = WeasyHTML(string=html_content).write_pdf()
+                return Response(
+                    pdf_file,
+                    mimetype="application/pdf",
+                    headers={"Content-disposition": "attachment; filename=hotspot_vouchers.pdf"}
+                )
+            except Exception as e:
+                logger.error(f"Error generating PDF with WeasyPrint: {str(e)}")
+                # Fallback to HTML or return error
+                return jsonify({
+                    "success": False,
+                    "message": f"Failed to generate PDF: {str(e)}. You can try HTML export.",
+                }), 500
+        else: # html_voucher
+            return Response(
+                html_content,
+                mimetype="text/html",
+                headers={"Content-disposition": "attachment; filename=hotspot_vouchers.html"}
+            )
+
+    else:
+        return jsonify({"success": False, "message": "Invalid export format specified."}), 400
+
+
 if __name__ == '__main__':
+    # Need to import math for format_bytes_for_export if it's used standalone or for testing here
+    # import math
     print("🚀 Starting Mikrotik Hotspot Management Server...")
     print(f"📊 Dashboard will be available at: http://localhost:{app_config['server']['port']}")
     print("⚙️  Make sure your Mikrotik router API is enabled!")
@@ -824,3 +1001,5 @@ if __name__ == '__main__':
         port=app_config['server']['port'],
         debug=app_config['server']['debug']
     )
+# Required for format_bytes_for_export, ensure it's at a scope where the function can see it.
+import math

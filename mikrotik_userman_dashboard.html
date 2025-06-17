@@ -329,6 +329,60 @@
             border: 1px solid rgba(231, 76, 60, 0.2);
         }
 
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto; /* 10% from the top and centered */
+            padding: 25px;
+            border: 1px solid #888;
+            width: 60%; /* Could be more or less, depending on screen size */
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            margin: 0;
+        }
+
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+        }
+
+        #editUserForm .form-group {
+            margin-bottom: 1rem; /* Consistent spacing */
+        }
+
+
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -478,9 +532,140 @@
             </div>
         </div>
 
+        <!-- Bulk User Generation -->
+        <div class="panel full-width">
+            <h2><i class="fas fa-users-cog"></i> Bulk Generate Users</h2>
+            <div id="bulkCreateUserAlert" class="alert"></div>
+            <form id="bulkCreateUserForm">
+                <div class="form-group">
+                    <label for="bulkNumberOfUsers">Number of Users (Required)</label>
+                    <input type="number" id="bulkNumberOfUsers" name="bulkNumberOfUsers" required>
+                </div>
+                <div class="form-group">
+                    <label for="bulkProfile">Profile (Required)</label>
+                    <select id="bulkProfile" name="bulkProfile" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="bulkTimeLimit">Time Limit</label>
+                    <input type="text" id="bulkTimeLimit" name="bulkTimeLimit" placeholder="e.g., 1h30m, 2h, 45m or 0s">
+                </div>
+                <div class="form-group">
+                    <label for="bulkDataLimitTotal">Total Data Limit (MB)</label>
+                    <input type="number" id="bulkDataLimitTotal" name="bulkDataLimitTotal" placeholder="Optional, in MB">
+                </div>
+                <div class="form-group">
+                    <label for="bulkDataLimitTx">Upload Limit (TX) (MB)</label>
+                    <input type="number" id="bulkDataLimitTx" name="bulkDataLimitTx" placeholder="Optional, in MB">
+                </div>
+                <div class="form-group">
+                    <label for="bulkDataLimitRx">Download Limit (RX) (MB)</label>
+                    <input type="number" id="bulkDataLimitRx" name="bulkDataLimitRx" placeholder="Optional, in MB">
+                </div>
+                <div class="form-group">
+                    <label for="bulkCommentPrefix">Comment Prefix</label>
+                    <input type="text" id="bulkCommentPrefix" name="bulkCommentPrefix" placeholder="Optional, e.g., BatchXYZ-">
+                </div>
+                <div class="form-group">
+                    <label for="bulkUsernameLength">Username Length</label>
+                    <input type="number" id="bulkUsernameLength" name="bulkUsernameLength" placeholder="Default: 6">
+                </div>
+                <div class="form-group">
+                    <label for="bulkPasswordLength">Password Length</label>
+                    <input type="number" id="bulkPasswordLength" name="bulkPasswordLength" placeholder="Default: 8">
+                </div>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-cogs"></i> Generate Users
+                </button>
+            </form>
+            <div id="bulkCreateResultDisplay" style="display:none; margin-top: 1.5rem;">
+                <h4>Generated User Credentials:</h4>
+                <pre id="bulkCreateCredentials" style="background-color: #f8f9fa; border: 1px solid #e1e8ed; padding: 1rem; border-radius: 8px; max-height: 300px; overflow-y: auto;"></pre>
+            </div>
+        </div>
+
+        <!-- User Maintenance Actions -->
+        <div class="panel full-width">
+            <h2><i class="fas fa-tasks"></i> User Maintenance</h2>
+            <div class="maintenance-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 1rem;"> {/* Added margin-bottom here */}
+
+                <!-- Clear User Counters Section -->
+                <div class="maintenance-section panel" style="padding: 1.5rem;"> {/* Added panel class and reduced padding */}
+                    <h3 style="margin-bottom: 1rem;"><i class="fas fa-broom"></i> Clear User Counters</h3>
+                    <div id="clearCountersAlert" class="alert"></div>
+                    <form id="clearCountersForm">
+                        <div class="form-group">
+                            <label>Scope:</label>
+                            <div>
+                                <input type="radio" id="clearScopeAll" name="clearScope" value="all" checked style="width:auto; margin-right:5px;">
+                                <label for="clearScopeAll" style="margin-right: 15px; font-weight: normal;">All Users</label>
+                                <input type="radio" id="clearScopeGroup" name="clearScope" value="group" style="width:auto; margin-right:5px;">
+                                <label for="clearScopeGroup" style="font-weight: normal;">By Profile</label>
+                            </div>
+                        </div>
+                        <div class="form-group" id="clearProfileGroupContainer" style="display: none;">
+                            <label for="clearProfileGroup">Profile</label>
+                            <select id="clearProfileGroup" name="clearProfileGroup"></select>
+                        </div>
+                        <button type="submit" class="btn"><i class="fas fa-broom"></i> Clear Counters</button>
+                    </form>
+                </div>
+
+                <!-- Delete Users Section -->
+                <div class="maintenance-section panel" style="padding: 1.5rem;"> {/* Added panel class and reduced padding */}
+                    <h3 style="margin-bottom: 1rem;"><i class="fas fa-user-times"></i> Delete Users</h3>
+                    <div id="deleteUsersAlert" class="alert"></div>
+                    <form id="deleteUsersForm">
+                        <div class="form-group">
+                            <label>Scope:</label>
+                            <div>
+                                <input type="radio" id="deleteScopeAll" name="deleteScope" value="all" checked style="width:auto; margin-right:5px;">
+                                <label for="deleteScopeAll" style="margin-right: 15px; font-weight: normal;">All Users</label>
+                                <input type="radio" id="deleteScopeGroup" name="deleteScope" value="group" style="width:auto; margin-right:5px;">
+                                <label for="deleteScopeGroup" style="font-weight: normal;">By Profile</label>
+                            </div>
+                        </div>
+                        <div class="form-group" id="deleteProfileGroupContainer" style="display: none;">
+                            <label for="deleteProfileGroup">Profile</label>
+                            <select id="deleteProfileGroup" name="deleteProfileGroup"></select>
+                        </div>
+                        <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Delete Users</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
         <!-- Users Table -->
         <div class="panel full-width">
-            <h2><i class="fas fa-users"></i> Hotspot Users</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2><i class="fas fa-users"></i> Hotspot Users</h2>
+                <div id="userTableLoadingIndicator" style="display: none;"><span class="loading"></span> Loading...</div>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="filter-controls" style="margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; background-color: #f8f9fa; padding: 1rem; border-radius: 8px;">
+                <div class="form-group" style="margin-bottom: 0; min-width: 200px;">
+                    <label for="userSearchInput" style="display: none;">Search</label>
+                    <input type="text" id="userSearchInput" placeholder="Search Username/Comment..." class="form-control" style="padding: 0.5rem 0.75rem; font-size: 0.9rem;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0; min-width: 180px;">
+                    <label for="userFilterProfile" style="display: none;">Profile</label>
+                    <select id="userFilterProfile" class="form-control" style="padding: 0.5rem 0.75rem; font-size: 0.9rem;">
+                        <option value="">All Profiles</option>
+                        <!-- Profiles will be populated here -->
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; min-width: 150px;">
+                    <label for="userFilterStatus" style="display: none;">Status</label>
+                    <select id="userFilterStatus" class="form-control" style="padding: 0.5rem 0.75rem; font-size: 0.9rem;">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="disabled">Disabled</option>
+                    </select>
+                </div>
+                {_COMMENT_ <!-- <button type="button" class="btn btn-sm" onclick="applyUserFilters()" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Apply</button> -->_}
+            </div>
+
             <div class="table-container">
                 <table id="usersTable">
                     <thead>
@@ -508,6 +693,25 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Export User Data -->
+        <div class="panel full-width">
+            <h2><i class="fas fa-file-export"></i> Export User Data</h2>
+            <div class="form-group" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <button type="button" class="btn" onclick="triggerExport('csv')">
+                    <i class="fas fa-file-csv"></i> Export as CSV
+                </button>
+                <button type="button" class="btn" onclick="triggerExport('json')">
+                    <i class="fas fa-file-code"></i> Export as JSON
+                </button>
+                <button type="button" class="btn" onclick="triggerExport('html_voucher')">
+                    <i class="fas fa-ticket-alt"></i> Export Vouchers (HTML)
+                </button>
+                <button type="button" class="btn" onclick="triggerExport('pdf_voucher')">
+                    <i class="fas fa-file-pdf"></i> Export Vouchers (PDF)
+                </button>
             </div>
         </div>
 
@@ -551,33 +755,105 @@
         </div>
     </footer>
 
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit User</h2>
+                <span class="close-button" onclick="closeEditUserModal()">&times;</span>
+            </div>
+            <div id="editUserAlert" class="alert"></div>
+            <form id="editUserForm">
+                <input type="hidden" id="editUsernameOrig" name="original_username">
+                <div class="form-group">
+                    <label for="editUsernameDisplay">Username</label>
+                    <input type="text" id="editUsernameDisplay" name="username_display" readonly style="background-color: #e9ecef;">
+                </div>
+                <div class="form-group">
+                    <label for="editPassword">New Password (leave blank to keep current)</label>
+                    <input type="password" id="editPassword" name="password">
+                </div>
+                <div class="form-group">
+                    <label for="editProfile">Profile</label>
+                    <select id="editProfile" name="profile"></select>
+                </div>
+                <div class="form-group">
+                    <label for="editTimeLimit">Time Limit (e.g., "1h30m", "0s" to remove)</label>
+                    <input type="text" id="editTimeLimit" name="time_limit" placeholder="e.g., 1h30m or 0s">
+                </div>
+                <div class="form-group">
+                    <label for="editDataLimitTotal">Total Data Limit (MB)</label>
+                    <input type="number" id="editDataLimitTotal" name="data_limit_total_mb" placeholder="Leave blank for no change or 0 for unlimited">
+                </div>
+                <div class="form-group">
+                    <label for="editDataLimitTx">Upload Limit (MB)</label>
+                    <input type="number" id="editDataLimitTx" name="data_limit_tx_mb" placeholder="Leave blank for no change or 0 for unlimited">
+                </div>
+                <div class="form-group">
+                    <label for="editDataLimitRx">Download Limit (MB)</label>
+                    <input type="number" id="editDataLimitRx" name="data_limit_rx_mb" placeholder="Leave blank for no change or 0 for unlimited">
+                </div>
+                <div class="form-group">
+                    <label for="editComment">Comment</label>
+                    <textarea id="editComment" name="comment" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editDisabled" style="display:inline-block; margin-right: 10px;">Disabled</label>
+                    <input type="checkbox" id="editDisabled" name="disabled" style="width: auto; vertical-align: middle;">
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                    <button type="button" class="btn btn-danger" onclick="closeEditUserModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
     <script>
         // Configuration
         const API_BASE = 'http://localhost:5000/api';
         let isConnected = false;
+        let currentUsers = []; // To store the list of users for editing
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
             checkConnection();
-            loadProfiles();
+            loadProfiles('profile'); // For single user creation form
+            // loadProfiles('editProfile');
+            loadProfiles('bulkProfile'); // For bulk user creation form
+            loadProfiles('clearProfileGroup'); // For clear counters form
+            loadProfiles('deleteProfileGroup'); // For delete users form
+            loadProfiles('userFilterProfile'); // For user table filter
             loadDashboardStats();
             loadUsers();
             loadActiveSessions();
+
+            // Setup for User Maintenance forms
+            setupScopeControls('clearScopeAll', 'clearScopeGroup', 'clearProfileGroupContainer');
+            setupScopeControls('deleteScopeAll', 'deleteScopeGroup', 'deleteProfileGroupContainer');
+
+            // Event listeners for dynamic user table filtering
+            document.getElementById('userSearchInput').addEventListener('input', () => loadUsers());
+            document.getElementById('userFilterProfile').addEventListener('change', () => loadUsers());
+            document.getElementById('userFilterStatus').addEventListener('change', () => loadUsers());
             
-            // Set up auto-refresh
+            // Set up auto-refresh (consider if filters should persist or be reset on auto-refresh)
+            // For now, auto-refresh will use current filter values.
             setInterval(() => {
                 if (isConnected) {
                     loadDashboardStats();
-                    loadUsers();
+                    loadUsers(); // This will use current filter values
                     loadActiveSessions();
                 }
             }, 30000); // Refresh every 30 seconds
         });
 
         // API Functions
-        async function apiCall(endpoint, options = {}) {
+        async function apiCall(endpoint, queryParams = '', options = {}) { // Modified to accept queryParams
             try {
-                const response = await fetch(`${API_BASE}${endpoint}`, {
+                const url = `${API_BASE}${endpoint}${queryParams}`;
+                const response = await fetch(url, {
                     headers: {
                         'Content-Type': 'application/json',
                         ...options.headers
@@ -624,18 +900,38 @@
             }
         }
 
-        async function loadProfiles() {
+        async function loadProfiles(selectElementId) {
             const result = await apiCall('/profiles');
-            if (result.profiles) {
-                const select = document.getElementById('profile');
-                select.innerHTML = '';
+            const select = document.getElementById(selectElementId);
+            if (!select) {
+                console.error(`Profile select element with ID '${selectElementId}' not found.`);
+                return;
+            }
+
+            const currentSelectedValue = select.value; // Preserve current selection if any
+            select.innerHTML = ''; // Clear existing options
+
+            if (result.profiles && result.profiles.length > 0) {
                 result.profiles.forEach(profile => {
                     const option = document.createElement('option');
                     option.value = profile.name;
                     option.textContent = profile.name;
-                    if (profile.name === 'default') option.selected = true;
                     select.appendChild(option);
                 });
+                // Try to reselect previous value or default to first if 'default' profile isn't present
+                if (currentSelectedValue && select.querySelector(`option[value="${currentSelectedValue}"]`)) {
+                    select.value = currentSelectedValue;
+                } else if (select.querySelector(`option[value="default"]`)) {
+                    select.value = 'default';
+                } else if (result.profiles.length > 0) {
+                    select.value = result.profiles[0].name; // Select first profile if 'default' is not there
+                }
+            } else {
+                 // Add a default option if no profiles are loaded
+                const option = document.createElement('option');
+                option.value = "default"; // Fallback
+                option.textContent = "Default (no profiles found)";
+                select.appendChild(option);
             }
         }
 
@@ -650,11 +946,27 @@
         }
 
         async function loadUsers() {
-            const result = await apiCall('/users');
+            const searchInput = document.getElementById('userSearchInput').value;
+            const profileFilter = document.getElementById('userFilterProfile').value;
+            const statusFilter = document.getElementById('userFilterStatus').value;
+            const loadingIndicator = document.getElementById('userTableLoadingIndicator');
+
+            loadingIndicator.style.display = 'inline'; // Show loading indicator
+
+            let queryParams = new URLSearchParams();
+            if (searchInput) queryParams.append('search_term', searchInput);
+            if (profileFilter) queryParams.append('filter_profile', profileFilter);
+            if (statusFilter) queryParams.append('filter_status', statusFilter);
+
+            const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+
+            const result = await apiCall('/users', queryString);
             const tbody = document.querySelector('#usersTable tbody');
+            loadingIndicator.style.display = 'none'; // Hide loading indicator
             
             if (result.users && result.users.length > 0) {
-                tbody.innerHTML = result.users.map(user => `
+                currentUsers = result.users; // Store users globally
+                tbody.innerHTML = currentUsers.map(user => `
                     <tr>
                         <td>${user.username}</td>
                         <td>••••••••</td>
@@ -668,14 +980,18 @@
                         <td>${formatBytes(user.bytes_in)}</td>
                         <td>${formatBytes(user.bytes_out)}</td>
                         <td>${user.comment || ''}</td>
-                        <td>
-                            <button class="btn btn-danger" onclick="deleteUser('${user.username}')">
+                        <td style="white-space: nowrap;">
+                            <button class="btn btn-sm btn-info" onclick="openEditUserModal('${user.username}')" style="margin-right: 5px;">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.username}')">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
                         </td>
                     </tr>
                 `).join('');
             } else {
+                currentUsers = []; // Clear if no users
                 tbody.innerHTML = '<tr><td colspan="13" style="text-align: center; padding: 2rem;">No users found</td></tr>';
             }
         }
@@ -732,6 +1048,221 @@
                 loadDashboardStats();
             }
         });
+
+        document.getElementById('editUserForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const originalUsername = document.getElementById('editUsernameOrig').value;
+            const formData = new FormData(this);
+            const payload = {};
+
+            // Only include fields if they have a value or are booleans (like 'disabled')
+            // Password: only if filled
+            if (formData.get('password')) {
+                payload.password = formData.get('password');
+            }
+            // Profile: always send, as it might be changed
+            payload.profile = formData.get('profile');
+
+            // Time Limit: send if provided, backend expects format like "1h30m" or "0s"
+            if (formData.get('time_limit').trim() !== '') {
+                 payload.time_limit = formData.get('time_limit').trim();
+            } else {
+                // If user clears the field, it implies they might want to remove the limit.
+                // Backend needs to handle "" or a specific value e.g. "0s" for removal.
+                // For now, sending if not empty. Or always send and let backend decide.
+                // Let's send empty string if user clears it, which `edit_user_route` converts to "0s".
+                 payload.time_limit = "";
+            }
+
+
+            // Data Limits: Convert MB to MB (as API expects _mb suffix)
+            // Send null if blank, so backend knows not to update if field is cleared by user by mistake,
+            // or send 0 if user explicitly types 0.
+            const totalDataLimit = formData.get('data_limit_total_mb');
+            if (totalDataLimit.trim() !== '') {
+                payload.data_limit_total_mb = parseFloat(totalDataLimit);
+            } else {
+                payload.data_limit_total_mb = null; // Explicitly send null if field is empty
+            }
+
+            const txDataLimit = formData.get('data_limit_tx_mb');
+            if (txDataLimit.trim() !== '') {
+                payload.data_limit_tx_mb = parseFloat(txDataLimit);
+            } else {
+                payload.data_limit_tx_mb = null;
+            }
+
+            const rxDataLimit = formData.get('data_limit_rx_mb');
+            if (rxDataLimit.trim() !== '') {
+                payload.data_limit_rx_mb = parseFloat(rxDataLimit);
+            } else {
+                payload.data_limit_rx_mb = null;
+            }
+
+            payload.comment = formData.get('comment');
+            payload.disabled = formData.get('disabled') === 'on'; // Checkbox value
+
+            const result = await apiCall(`/users/${originalUsername}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+
+            showAlert('editUserAlert', result.success ? 'success' : 'error', result.message);
+
+            if (result.success) {
+                closeEditUserModal();
+                loadUsers(); // Refresh the table
+            }
+        });
+
+        document.getElementById('bulkCreateUserForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = this;
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.innerHTML;
+            submitButton.innerHTML = '<span class="loading"></span> Generating...';
+            submitButton.disabled = true;
+
+            // Clear previous results
+            document.getElementById('bulkCreateCredentials').textContent = '';
+            document.getElementById('bulkCreateResultDisplay').style.display = 'none';
+            showAlert('bulkCreateUserAlert', '', ''); // Clear alert
+
+            const payload = {
+                number_of_users: parseInt(document.getElementById('bulkNumberOfUsers').value),
+                profile: document.getElementById('bulkProfile').value,
+                time_limit: document.getElementById('bulkTimeLimit').value.trim() || null,
+                data_limit_total: document.getElementById('bulkDataLimitTotal').value ? parseFloat(document.getElementById('bulkDataLimitTotal').value) : null,
+                data_limit_tx: document.getElementById('bulkDataLimitTx').value ? parseFloat(document.getElementById('bulkDataLimitTx').value) : null,
+                data_limit_rx: document.getElementById('bulkDataLimitRx').value ? parseFloat(document.getElementById('bulkDataLimitRx').value) : null,
+                comment_prefix: document.getElementById('bulkCommentPrefix').value.trim() || null,
+                username_length: document.getElementById('bulkUsernameLength').value ? parseInt(document.getElementById('bulkUsernameLength').value) : null,
+                password_length: document.getElementById('bulkPasswordLength').value ? parseInt(document.getElementById('bulkPasswordLength').value) : null,
+            };
+
+            // Remove null properties from payload if backend prefers omission over null for optional numbers
+            for (const key in payload) {
+                if (payload[key] === null) {
+                    delete payload[key];
+                }
+            }
+
+            const result = await apiCall('/bulk-create-users', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            showAlert('bulkCreateUserAlert', result.success ? 'success' : 'error', result.message || `Requested: ${result.requested_users}, Successful: ${result.successful_users}, Failed: ${result.failed_users}`);
+
+            if (result.success && result.generated_credentials && result.generated_credentials.length > 0) {
+                let credentialsText = `Successfully created ${result.successful_users} user(s):\n\n`;
+                result.generated_credentials.forEach(cred => {
+                    credentialsText += `Username: ${cred.username}\nPassword: ${cred.password}\n\n`;
+                });
+                document.getElementById('bulkCreateCredentials').textContent = credentialsText;
+                document.getElementById('bulkCreateResultDisplay').style.display = 'block';
+            }
+
+            if (result.errors && result.errors.length > 0) {
+                let errorDetails = "\nDetails:\n" + result.errors.map(err => `User '${err.username}': ${err.error}`).join("\n");
+                const alertDiv = document.getElementById('bulkCreateUserAlert');
+                alertDiv.textContent += errorDetails; // Append error details
+            }
+
+            if (result.success) {
+                 loadUsers();
+                 loadDashboardStats();
+            }
+
+            submitButton.innerHTML = originalButtonText;
+            submitButton.disabled = false;
+        });
+
+        document.getElementById('clearCountersForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = this;
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.innerHTML;
+
+            if (!confirm("Are you sure you want to clear counters? This action cannot be undone.")) {
+                return;
+            }
+
+            submitButton.innerHTML = '<span class="loading"></span> Clearing...';
+            submitButton.disabled = true;
+            showAlert('clearCountersAlert', '', ''); // Clear previous alert
+
+            const scope = form.elements.clearScope.value;
+            const payload = { scope };
+            if (scope === 'group') {
+                payload.group_name = document.getElementById('clearProfileGroup').value;
+                 if (!payload.group_name) {
+                    showAlert('clearCountersAlert', 'error', 'Please select a profile for group scope.');
+                    submitButton.innerHTML = originalButtonText;
+                    submitButton.disabled = false;
+                    return;
+                }
+            }
+
+            const result = await apiCall('/clear-counters', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            showAlert('clearCountersAlert', result.success ? 'success' : 'error', result.message + (result.cleared_count !== undefined ? ` (${result.cleared_count} users affected)` : ''));
+
+            if (result.success) {
+                // No need to call loadUsers() if counters don't affect main table display directly
+                // loadUsers();
+                loadDashboardStats(); // Data usage might change if active sessions were affected by counter resets (unlikely for hotspot users)
+            }
+
+            submitButton.innerHTML = originalButtonText;
+            submitButton.disabled = false;
+        });
+
+        document.getElementById('deleteUsersForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = this;
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.innerHTML;
+
+            if (!confirm("WARNING: This will permanently delete users. Are you absolutely sure?")) {
+                return;
+            }
+
+            submitButton.innerHTML = '<span class="loading"></span> Deleting...';
+            submitButton.disabled = true;
+            showAlert('deleteUsersAlert', '', ''); // Clear previous alert
+
+            const scope = form.elements.deleteScope.value;
+            const payload = { scope };
+            if (scope === 'group') {
+                payload.group_name = document.getElementById('deleteProfileGroup').value;
+                if (!payload.group_name) {
+                    showAlert('deleteUsersAlert', 'error', 'Please select a profile for group scope.');
+                    submitButton.innerHTML = originalButtonText;
+                    submitButton.disabled = false;
+                    return;
+                }
+            }
+
+            const result = await apiCall('/bulk-delete-users', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            showAlert('deleteUsersAlert', result.success ? 'success' : 'error', result.message + (result.deleted_count !== undefined ? ` (${result.deleted_count} users deleted)` : ''));
+
+            if (result.success) {
+                loadUsers();
+                loadDashboardStats();
+            }
+
+            submitButton.innerHTML = originalButtonText;
+            submitButton.disabled = false;
+        });
+
 
         document.getElementById('configForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -792,6 +1323,79 @@
                 alert.style.display = 'none';
             }, 5000);
         }
+
+    async function loadProfilesIntoEditModal() {
+        // This function now uses the generalized loadProfiles
+        await loadProfiles('editProfile');
+    }
+
+    function setupScopeControls(radioAllId, radioGroupId, containerId) {
+        const radioAll = document.getElementById(radioAllId);
+        const radioGroup = document.getElementById(radioGroupId);
+        const container = document.getElementById(containerId);
+        const profileSelect = container.querySelector('select');
+
+        function toggleProfileSelect() {
+            if (radioGroup.checked) {
+                container.style.display = 'block';
+                profileSelect.disabled = false;
+                 // Optionally re-load profiles here if they could change dynamically,
+                 // or ensure they are loaded once at the beginning.
+            // loadProfiles(profileSelect.id);
+            } else {
+                container.style.display = 'none';
+                // profileSelect.disabled = true; // Keep it enabled, just hidden, so its value can be read if needed
+            }
+        }
+        radioAll.addEventListener('change', toggleProfileSelect);
+        radioGroup.addEventListener('change', toggleProfileSelect);
+        // Initial setup to hide/show based on default checked radio
+        // Ensure this is called after initial profile loading if profiles determine default state
+        toggleProfileSelect();
+    }
+
+    async function openEditUserModal(username) {
+        const user = currentUsers.find(u => u.username === username);
+        if (!user) {
+            alert('User not found for editing.');
+            return;
+        }
+
+        await loadProfilesIntoEditModal(); // Load profiles into the modal's select
+
+        document.getElementById('editUsernameOrig').value = user.username;
+        document.getElementById('editUsernameDisplay').value = user.username;
+        document.getElementById('editPassword').value = ''; // Clear password field
+
+        document.getElementById('editProfile').value = user.profile;
+
+        // Time limit: user.limit_uptime is like "1h30m0s". Display as is or simplify.
+        // For now, display as is. User needs to know the format or we need a parser/formatter.
+        document.getElementById('editTimeLimit').value = user.limit_uptime || '';
+
+        // Data limits: API returns bytes, form expects MB for display
+        const MB = 1024 * 1024;
+        document.getElementById('editDataLimitTotal').value = user.limit_bytes_total ? (parseFloat(user.limit_bytes_total) / MB).toFixed(2) : '';
+        document.getElementById('editDataLimitTx').value = user.limit_bytes_in ? (parseFloat(user.limit_bytes_in) / MB).toFixed(2) : '';
+        document.getElementById('editDataLimitRx').value = user.limit_bytes_out ? (parseFloat(user.limit_bytes_out) / MB).toFixed(2) : '';
+
+        document.getElementById('editComment').value = user.comment || '';
+        document.getElementById('editDisabled').checked = user.disabled;
+
+        document.getElementById('editUserModal').style.display = 'block';
+        document.getElementById('editUserAlert').style.display = 'none'; // Clear previous alerts
+    }
+
+    function closeEditUserModal() {
+        document.getElementById('editUserModal').style.display = 'none';
+    }
+
+    function triggerExport(format) {
+        const exportUrl = `${API_BASE}/export-users?format=${format}`;
+        // Using window.open for potentially better handling of downloads by browsers
+        window.open(exportUrl, '_blank');
+        // Alternatively, window.location.href = exportUrl; can be used.
+    }
 
         function formatBytes(bytes) {
             // Ensure bytes is treated as a string for checks like empty string, then parse
