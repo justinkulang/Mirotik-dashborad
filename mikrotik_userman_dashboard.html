@@ -486,18 +486,23 @@
                     <thead>
                         <tr>
                             <th>Username</th>
+                            <th>Password</th>
                             <th>Profile</th>
                             <th>Status</th>
                             <th>Time Limit</th>
-                            <th>Data Limit</th>
-                            <th>Bytes In</th>
-                            <th>Bytes Out</th>
+                            <th>Valid Until</th>
+                            <th>Total Data Limit</th>
+                            <th>Upload Limit</th>
+                            <th>Download Limit</th>
+                            <th>Actual Download</th>
+                            <th>Actual Upload</th>
+                            <th>Comments</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 2rem;">
+                            <td colspan="13" style="text-align: center; padding: 2rem;">
                                 <i class="fas fa-spinner fa-spin"></i> Loading users...
                             </td>
                         </tr>
@@ -652,12 +657,17 @@
                 tbody.innerHTML = result.users.map(user => `
                     <tr>
                         <td>${user.username}</td>
+                        <td>••••••••</td>
                         <td>${user.profile}</td>
                         <td><span class="status-${user.disabled ? 'offline' : 'online'}">${user.disabled ? 'Disabled' : 'Active'}</span></td>
                         <td>${user.limit_uptime || 'Unlimited'}</td>
+                        <td>-</td>
                         <td>${user.limit_bytes_total ? formatBytes(user.limit_bytes_total) : 'Unlimited'}</td>
+                        <td>${user.limit_bytes_in ? formatBytes(user.limit_bytes_in) : 'Unlimited'}</td>
+                        <td>${user.limit_bytes_out ? formatBytes(user.limit_bytes_out) : 'Unlimited'}</td>
                         <td>${formatBytes(user.bytes_in)}</td>
                         <td>${formatBytes(user.bytes_out)}</td>
+                        <td>${user.comment || ''}</td>
                         <td>
                             <button class="btn btn-danger" onclick="deleteUser('${user.username}')">
                                 <i class="fas fa-trash"></i> Delete
@@ -666,7 +676,7 @@
                     </tr>
                 `).join('');
             } else {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">No users found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="13" style="text-align: center; padding: 2rem;">No users found</td></tr>';
             }
         }
 
@@ -784,11 +794,25 @@
         }
 
         function formatBytes(bytes) {
-            if (!bytes || bytes === '0') return '0 B';
+            // Ensure bytes is treated as a string for checks like empty string, then parse
+            const bytesStr = String(bytes);
+            if (bytesStr === null || bytesStr === undefined || bytesStr.trim() === '' || bytesStr.toLowerCase() === 'nan' || bytesStr.toLowerCase() === 'null' || bytesStr.toLowerCase() === 'undefined') {
+                return '0 B';
+            }
+
+            const numericBytes = parseFloat(bytesStr);
+            if (isNaN(numericBytes)) { // Double check after parseFloat
+                return '0 B';
+            }
+            if (numericBytes === 0) return '0 B';
+
             const k = 1024;
             const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            // Handle potential negative byte values if they ever occur, or very small numbers
+            if (numericBytes < 1) return numericBytes.toFixed(2) + ' B'; // Or handle as error/specific case
+
+            const i = Math.floor(Math.log(numericBytes) / Math.log(k));
+            return parseFloat((numericBytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
     </script>
 </body>
