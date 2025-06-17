@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The IT Dad - Mikrotik Hotspot Manager</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            border-bottom: 3px solid #667eea;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .brand-info h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 2px;
+        }
+
+        .brand-info p {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .contact-info {
+            text-align: right;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .contact-info i {
+            margin-right: 5px;
+            color: #667eea;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .panel h2 {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #27ae60, #229954);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e1e8ed;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .status-online {
+            background: #27ae60;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-offline {
+            background: #95a5a6;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .connection-status.connected {
+            background: rgba(39, 174, 96, 0.1);
+            color: #27ae60;
+            border: 1px solid rgba(39, 174, 96, 0.2);
+        }
+
+        .connection-status.disconnected {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.2);
+        }
+
+        .footer {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+            border-top: 3px solid #667eea;
+        }
+
+        .footer p {
+            color: #7f8c8d;
+            margin-bottom: 1rem;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .social-links a {
+            color: #667eea;
+            font-size: 1.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: #764ba2;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert.success {
+            background: rgba(39, 174, 96, 0.1);
+            color: #27ae60;
+            border: 1px solid rgba(39, 174, 96, 0.2);
+        }
+
+        .alert.error {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 0 1rem;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="brand">
+                <div class="logo">IT</div>
+                <div class="brand-info">
+                    <h1>The IT Dad</h1>
+                    <p>Mikrotik Hotspot Management System</p>
+                </div>
+            </div>
+            <div class="contact-info">
+                <div><i class="fas fa-phone"></i> +(211) 923 616 820</div>
+                <div><i class="fas fa-envelope"></i> justinkulang@gmail.com</div>
+                <div><i class="fas fa-map-marker-alt"></i> Juba, South Sudan</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Connection Status -->
+        <div id="connectionStatus" class="connection-status disconnected">
+            <i class="fas fa-wifi"></i>
+            <span>Checking connection to Mikrotik router...</span>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <div class="dashboard-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                <div class="stat-number" id="totalUsers">-</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-wifi"></i></div>
+                <div class="stat-number" id="activeSessions">-</div>
+                <div class="stat-label">Active Sessions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="stat-number" id="dataUsed">-</div>
+                <div class="stat-label">Data Used Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+                <div class="stat-number" id="revenue">-</div>
+                <div class="stat-label">Revenue Today</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- User Management -->
+            <div class="panel">
+                <h2><i class="fas fa-user-plus"></i> Create New User</h2>
+                <div id="createUserAlert" class="alert"></div>
+                <form id="createUserForm">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile">Profile</label>
+                        <select id="profile" name="profile">
+                            <option value="default">Default</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="timeLimit">Time Limit (hours)</label>
+                        <input type="number" id="timeLimit" name="timeLimit" placeholder="Leave empty for unlimited">
+                    </div>
+                    <div class="form-group">
+                        <label for="dataLimit">Data Limit (MB)</label>
+                        <input type="number" id="dataLimit" name="dataLimit" placeholder="Leave empty for unlimited">
+                    </div>
+                    <button type="submit" class="btn">
+                        <i class="fas fa-plus"></i> Create User
+                    </button>
+                </form>
+            </div>
+
+            <!-- Router Configuration -->
+            <div class="panel">
+                <h2><i class="fas fa-cog"></i> Router Configuration</h2>
+                <div id="configAlert" class="alert"></div>
+                <form id="configForm">
+                    <div class="form-group">
+                        <label for="routerHost">Router IP Address</label>
+                        <input type="text" id="routerHost" name="host" value="192.168.1.62">
+                    </div>
+                    <div class="form-group">
+                        <label for="routerPort">API Port</label>
+                        <input type="number" id="routerPort" name="port" value="8728">
+                    </div>
+                    <div class="form-group">
+                        <label for="routerUsername">Username</label>
+                        <input type="text" id="routerUsername" name="username" value="admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="routerPassword">Password</label>
+                        <input type="password" id="routerPassword" name="password">
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="button" class="btn" onclick="testConnection()">
+                            <i class="fas fa-plug"></i> Test Connection
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Save Config
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="panel full-width">
+            <h2><i class="fas fa-users"></i> Hotspot Users</h2>
+            <div class="table-container">
+                <table id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Profile</th>
+                            <th>Status</th>
+                            <th>Time Limit</th>
+                            <th>Data Limit</th>
+                            <th>Bytes In</th>
+                            <th>Bytes Out</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 2rem;">
+                                <i class="fas fa-spinner fa-spin"></i> Loading users...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Active Sessions -->
+        <div class="panel full-width">
+            <h2><i class="fas fa-wifi"></i> Active Sessions</h2>
+            <div class="table-container">
+                <table id="sessionsTable">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>IP Address</th>
+                            <th>MAC Address</th>
+                            <th>Uptime</th>
+                            <th>Bytes In</th>
+                            <th>Bytes Out</th>
+                            <th>Time Left</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 2rem;">
+                                <i class="fas fa-spinner fa-spin"></i> Loading sessions...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2025 The IT Dad - Professional IT Solutions & Support</p>
+        <p>Mikrotik Hotspot Management System | Juba, South Sudan</p>
+        <div class="social-links">
+            <a href="tel:+211923616820"><i class="fas fa-phone"></i></a>
+            <a href="mailto:justinkulang@gmail.com"><i class="fas fa-envelope"></i></a>
+            <a href="#"><i class="fab fa-whatsapp"></i></a>
+            <a href="#"><i class="fab fa-telegram"></i></a>
+        </div>
+    </footer>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:5000/api';
+        let isConnected = false;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            checkConnection();
+            loadProfiles();
+            loadDashboardStats();
+            loadUsers();
+            loadActiveSessions();
+            
+            // Set up auto-refresh
+            setInterval(() => {
+                if (isConnected) {
+                    loadDashboardStats();
+                    loadUsers();
+                    loadActiveSessions();
+                }
+            }, 30000); // Refresh every 30 seconds
+        });
+
+        // API Functions
+        async function apiCall(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('API call failed:', error);
+                return { success: false, message: 'Network error' };
+            }
+        }
+
+        async function checkConnection() {
+            const result = await apiCall('/test-connection', { method: 'POST' });
+            const statusElement = document.getElementById('connectionStatus');
+            
+            if (result.success) {
+                statusElement.className = 'connection-status connected';
+                statusElement.innerHTML = '<i class="fas fa-wifi"></i> Connected to Mikrotik router';
+                isConnected = true;
+            } else {
+                statusElement.className = 'connection-status disconnected';
+                statusElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Not connected to router';
+                isConnected = false;
+            }
+        }
+
+        async function testConnection() {
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span class="loading"></span> Testing...';
+            button.disabled = true;
+
+            const result = await apiCall('/test-connection', { method: 'POST' });
+            
+            showAlert('configAlert', result.success ? 'success' : 'error', result.message);
+            
+            button.innerHTML = originalText;
+            button.disabled = false;
+            
+            if (result.success) {
+                checkConnection();
+            }
+        }
+
+        async function loadProfiles() {
+            const result = await apiCall('/profiles');
+            if (result.profiles) {
+                const select = document.getElementById('profile');
+                select.innerHTML = '';
+                result.profiles.forEach(profile => {
+                    const option = document.createElement('option');
+                    option.value = profile.name;
+                    option.textContent = profile.name;
+                    if (profile.name === 'default') option.selected = true;
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        async function loadDashboardStats() {
+            const result = await apiCall('/dashboard-stats');
+            if (result) {
+                document.getElementById('totalUsers').textContent = result.total_users || '-';
+                document.getElementById('activeSessions').textContent = result.active_sessions || '-';
+                document.getElementById('dataUsed').textContent = result.data_used_today || '-';
+                document.getElementById('revenue').textContent = result.revenue_today || '-';
+            }
+        }
+
+        async function loadUsers() {
+            const result = await apiCall('/users');
+            const tbody = document.querySelector('#usersTable tbody');
+            
+            if (result.users && result.users.length > 0) {
+                tbody.innerHTML = result.users.map(user => `
+                    <tr>
+                        <td>${user.username}</td>
+                        <td>${user.profile}</td>
+                        <td><span class="status-${user.disabled ? 'offline' : 'online'}">${user.disabled ? 'Disabled' : 'Active'}</span></td>
+                        <td>${user.limit_uptime || 'Unlimited'}</td>
+                        <td>${user.limit_bytes_total ? formatBytes(user.limit_bytes_total) : 'Unlimited'}</td>
+                        <td>${formatBytes(user.bytes_in)}</td>
+                        <td>${formatBytes(user.bytes_out)}</td>
+                        <td>
+                            <button class="btn btn-danger" onclick="deleteUser('${user.username}')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">No users found</td></tr>';
+            }
+        }
+
+        async function loadActiveSessions() {
+            const result = await apiCall('/active-sessions');
+            const tbody = document.querySelector('#sessionsTable tbody');
+            
+            if (result.sessions && result.sessions.length > 0) {
+                tbody.innerHTML = result.sessions.map(session => `
+                    <tr>
+                        <td>${session.username}</td>
+                        <td>${session.ip}</td>
+                        <td>${session.mac}</td>
+                        <td>${session.uptime}</td>
+                        <td>${formatBytes(session.bytes_in)}</td>
+                        <td>${formatBytes(session.bytes_out)}</td>
+                        <td>${session.session_time_left || 'Unlimited'}</td>
+                        <td>
+                            <button class="btn btn-danger" onclick="disconnectUser('${session.username}')">
+                                <i class="fas fa-sign-out-alt"></i> Disconnect
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">No active sessions</td></tr>';
+            }
+        }
+
+        // Form handlers
+        document.getElementById('createUserForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const userData = {
+                username: formData.get('username'),
+                password: formData.get('password'),
+                profile: formData.get('profile'),
+                time_limit: formData.get('timeLimit') || null,
+                data_limit: formData.get('dataLimit') || null
+            };
+
+            const result = await apiCall('/users', {
+                method: 'POST',
+                body: JSON.stringify(userData)
+            });
+
+            showAlert('createUserAlert', result.success ? 'success' : 'error', result.message);
+            
+            if (result.success) {
+                this.reset();
+                loadUsers();
+                loadDashboardStats();
+            }
+        });
+
+        document.getElementById('configForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const configData = {
+                host: formData.get('host'),
+                port: parseInt(formData.get('port')),
+                username: formData.get('username'),
+                password: formData.get('password')
+            };
+
+            const result = await apiCall('/update-config', {
+                method: 'POST',
+                body: JSON.stringify(configData)
+            });
+
+            showAlert('configAlert', result.success ? 'success' : 'error', result.message);
+            
+            if (result.success) {
+                setTimeout(checkConnection, 1000);
+            }
+        });
+
+        // User actions
+        async function deleteUser(username) {
+            if (!confirm(`Are you sure you want to delete user "${username}"?`)) return;
+            
+            const result = await apiCall(`/users/${username}`, { method: 'DELETE' });
+            
+            if (result.success) {
+                loadUsers();
+                loadDashboardStats();
+            }
+            alert(result.message);
+        }
+
+        async function disconnectUser(username) {
+            if (!confirm(`Are you sure you want to disconnect user "${username}"?`)) return;
+            
+            const result = await apiCall(`/disconnect-user/${username}`, { method: 'POST' });
+            
+            if (result.success) {
+                loadActiveSessions();
+                loadDashboardStats();
+            }
+            alert(result.message);
+        }
+
+        // Utility functions
+        function showAlert(elementId, type, message) {
+            const alert = document.getElementById(elementId);
+            alert.className = `alert ${type}`;
+            alert.textContent = message;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes || bytes === '0') return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
